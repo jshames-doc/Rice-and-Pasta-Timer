@@ -16,7 +16,7 @@
 </head>
 
 <body>
-    <div class="version-tag">v1.7</div>
+    <div class="version-tag">v1.8</div>
     <div class="background-blobs">
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
@@ -63,6 +63,23 @@
     </main>
 
     <!-- Audio is handled via Web Audio API now -->
+
+    <!-- Install Modal -->
+    <div id="install-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="modal-icon">📲</span>
+            <h2 class="modal-title">Install App</h2>
+            <p class="modal-text">of "Rice & Pasta Timer" for the best experience and reliable background alarms.</p>
+            <div class="install-steps">
+                <p style="margin-bottom:8px"><strong>To Install:</strong></p>
+                <ol>
+                    <li>Tap the <strong>Share</strong> button (iOS) or <strong>Menu</strong> (Android).</li>
+                    <li>Select <strong>"Add to Home Screen"</strong> or <strong>"Install App"</strong>.</li>
+                </ol>
+            </div>
+            <button id="close-modal-btn" class="btn primary">Got it!</button>
+        </div>
+    </div>
 
     <script src="script.js?v=2"></script>
 </body>

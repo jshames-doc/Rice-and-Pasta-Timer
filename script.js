@@ -44,7 +44,7 @@ const resetBtn = document.getElementById('reset-btn');
 const alarmSound = document.getElementById('alarm-sound');
 const timerCard = document.querySelector('.timer-card');
 
-const CURRENT_VERSION = '1.7';
+const CURRENT_VERSION = '1.8';
 
 // Nuclear Option: Check version and clear cache if needed
 if (localStorage.getItem('appVersion') !== CURRENT_VERSION) {
@@ -338,3 +338,33 @@ function timerFinished() {
         timerCard.style.boxShadow = "";
     }, 5000);
 }
+
+// Install Modal Logic
+const installModal = document.getElementById('install-modal');
+const closeModalBtn = document.getElementById('close-modal-btn');
+
+function checkInstallStatus() {
+    // Check if app is running in standalone mode (installed)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true;
+
+    // Check if user has already dismissed the modal
+    const hasSeenModal = localStorage.getItem('hasSeenInstallModal');
+
+    // Show modal only if NOT installed and NOT seen
+    // Also, usually only relevant on mobile/tablet widths
+    if (!isStandalone && !hasSeenModal && window.innerWidth < 1024) {
+        // Little delay to let the page load visually first
+        setTimeout(() => {
+            installModal.classList.add('show');
+        }, 1500);
+    }
+}
+
+closeModalBtn.addEventListener('click', () => {
+    installModal.classList.remove('show');
+    localStorage.setItem('hasSeenInstallModal', 'true');
+});
+
+// Run check on load
+checkInstallStatus();
