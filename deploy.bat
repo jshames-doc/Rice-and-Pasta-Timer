@@ -12,10 +12,13 @@ echo.
 :: Get latest version from README or internal file
 set VERSION=1.81
 
+:: Format version for Cloud Run (replace dots with dashes, e.g. 1.81 -> 1-81)
+set SAFE_VERSION=%VERSION:.=-%
+
 echo Project: %PROJECT_ID%
 echo Service: %SERVICE_NAME%
 echo Region:  %REGION%
-echo Version: %VERSION%
+echo Version: %VERSION% (Suffix: v%SAFE_VERSION%)
 echo.
 
 echo [1/3] Setting project and enabling services...
@@ -39,6 +42,7 @@ call gcloud run deploy %SERVICE_NAME% ^
   --platform managed ^
   --region %REGION% ^
   --allow-unauthenticated ^
+  --revision-suffix=v%SAFE_VERSION% ^
   --quiet
 
 if %ERRORLEVEL% equ 0 (
