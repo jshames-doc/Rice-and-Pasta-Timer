@@ -35,6 +35,7 @@ const cookingData = {
 // DOM Elements
 const categorySelect = document.getElementById('category-select');
 const itemSelect = document.getElementById('item-select');
+const itemLabel = document.getElementById('item-label');
 const timerMinutes = document.getElementById('timer-minutes');
 const timerSeconds = document.getElementById('timer-seconds');
 const startBtn = document.getElementById('start-btn');
@@ -43,7 +44,7 @@ const resetBtn = document.getElementById('reset-btn');
 const alarmSound = document.getElementById('alarm-sound');
 const timerCard = document.querySelector('.timer-card');
 
-const CURRENT_VERSION = '1.6';
+const CURRENT_VERSION = '1.7';
 
 // Nuclear Option: Check version and clear cache if needed
 if (localStorage.getItem('appVersion') !== CURRENT_VERSION) {
@@ -163,9 +164,10 @@ categorySelect.addEventListener('change', (e) => {
 });
 
 function updateItemDropdown(category) {
-    itemSelect.innerHTML = '<option value="" disabled selected>Select variety...</option>';
-
     if (category === 'manual') {
+        itemLabel.textContent = "Select Time";
+        itemSelect.innerHTML = '<option value="" disabled selected>Select time...</option>';
+
         // Generate 1-45 minutes
         for (let i = 1; i <= 45; i++) {
             const option = document.createElement('option');
@@ -174,6 +176,9 @@ function updateItemDropdown(category) {
             itemSelect.appendChild(option);
         }
     } else {
+        itemLabel.textContent = "Variety";
+        itemSelect.innerHTML = '<option value="" disabled selected>Select variety...</option>';
+
         // Load from data
         const items = cookingData[category];
         for (const item in items) {
