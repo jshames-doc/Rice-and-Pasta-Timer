@@ -44,7 +44,7 @@ const resetBtn = document.getElementById('reset-btn');
 const alarmSound = document.getElementById('alarm-sound');
 const timerCard = document.querySelector('.timer-card');
 
-const CURRENT_VERSION = '1.8';
+const CURRENT_VERSION = '1.81';
 
 // Nuclear Option: Check version and clear cache if needed
 if (localStorage.getItem('appVersion') !== CURRENT_VERSION) {
@@ -316,10 +316,10 @@ function timerFinished() {
         source.connect(audioContext.destination);
         source.start(0);
 
-        // Stop after 3 seconds
+        // Stop after 6 seconds
         setTimeout(() => {
             source.stop();
-        }, 3000);
+        }, 6000);
     } else {
         console.error("Audio Context or Alarm Buffer missing!");
     }
