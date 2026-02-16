@@ -43,7 +43,7 @@ const resetBtn = document.getElementById('reset-btn');
 const alarmSound = document.getElementById('alarm-sound');
 const timerCard = document.querySelector('.timer-card');
 
-const CURRENT_VERSION = '1.2';
+const CURRENT_VERSION = '1.5';
 
 // Nuclear Option: Check version and clear cache if needed
 if (localStorage.getItem('appVersion') !== CURRENT_VERSION) {
@@ -77,6 +77,9 @@ if (localStorage.getItem('appVersion') !== CURRENT_VERSION) {
 let totalSecondsRemaining = 0;
 let isRunning = false;
 let timerWorker = null;
+let audioContext = null;
+let alarmBuffer = null;
+let silenceSource = null;
 
 // Register Service Worker
 if ('serviceWorker' in navigator) {
@@ -105,6 +108,39 @@ if (window.Worker) {
 } else {
     console.warn('Web Workers not supported in this browser. Timer may be throttled in background.');
     // Fallback logic could go here, but for now we warn
+}
+
+// Initialize Audio Context and Preload Alarm
+async function initAudioContext() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    // Resume context if suspended
+    if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+    }
+
+    // Preload Alarm Sound into Buffer
+    if (!alarmBuffer) {
+        try {
+            const response = await fetch('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+            const arrayBuffer = await response.arrayBuffer();
+            alarmBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        } catch (e) {
+            console.error('Failed to load alarm sound:', e);
+        }
+    }
+
+    // Play Silent Buffer to Keep Engine Alive
+    if (!silenceSource) {
+        const buffer = audioContext.createBuffer(1, 22050, 22050); // 1s buffer
+        silenceSource = audioContext.createBufferSource();
+        silenceSource.buffer = buffer;
+        silenceSource.loop = true;
+        silenceSource.connect(audioContext.destination);
+        silenceSource.start(0);
+    }
 }
 
 // Request Notification Permission on first interaction
@@ -158,6 +194,7 @@ startBtn.addEventListener('click', () => {
     if (isRunning) return;
 
     requestNotificationPermission();
+    initAudioContext(); // Keep audio engine alive & load alarm
 
     isRunning = true;
     startBtn.disabled = true;
@@ -192,6 +229,7 @@ stopBtn.addEventListener('click', () => {
         clearInterval(window.countdownInterval);
     }
 
+    // Don't kill audio context here, keep it alive for next run
     isRunning = false;
     startBtn.disabled = false;
     stopBtn.disabled = true;
@@ -249,20 +287,23 @@ function timerFinished() {
     stopBtn.disabled = true;
     document.body.classList.remove('timer-running');
 
-    // Play sound loop for 3 seconds using native loop property
-    alarmSound.loop = true;
-    alarmSound.play().catch(error => {
-        console.error("Audio playback failed:", error);
-    });
+    // Play Alarm using Web Audio API
+    if (audioContext && alarmBuffer) {
+        const source = audioContext.createBufferSource();
+        source.buffer = alarmBuffer;
+        source.loop = true; // Loop the alarm sound itself
+        source.connect(audioContext.destination);
+        source.start(0);
 
-    // Stop after 3 seconds
-    setTimeout(() => {
-        alarmSound.pause();
-        alarmSound.currentTime = 0;
-        alarmSound.loop = false;
-    }, 3000);
+        // Stop after 3 seconds
+        setTimeout(() => {
+            source.stop();
+        }, 3000);
+    } else {
+        console.error("Audio Context or Alarm Buffer missing!");
+    }
 
-    // Vibration pattern (vibrate, pause, vibrate...)
+    // Vibration pattern
     if (navigator.vibrate) {
         navigator.vibrate([500, 200, 500, 200, 500]);
     }

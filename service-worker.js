@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rice-pasta-timer-v1.2'; // Incremented version
+const CACHE_NAME = 'rice-pasta-timer-v1.5'; // Incremented version
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
