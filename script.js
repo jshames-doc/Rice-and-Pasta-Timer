@@ -57,14 +57,14 @@ categorySelect.addEventListener('change', (e) => {
 function updateItemDropdown(category) {
     itemSelect.innerHTML = '<option value="" disabled selected>Select variety...</option>';
     const items = cookingData[category];
-    
+
     for (const item in items) {
         const option = document.createElement('option');
         option.value = items[item];
         option.textContent = item;
         itemSelect.appendChild(option);
     }
-    
+
     itemSelect.disabled = false;
 }
 
@@ -81,7 +81,7 @@ function updateTimerDisplay() {
     const secs = totalSecondsRemaining % 60;
     timerMinutes.textContent = String(mins).padStart(2, '0');
     timerSeconds.textContent = String(secs).padStart(2, '0');
-    
+
     // Update document title for easy tracking
     document.title = `${timerMinutes.textContent}:${timerSeconds.textContent} - Rice & Pasta Timer`;
 }
@@ -89,21 +89,21 @@ function updateTimerDisplay() {
 // Timer Controls
 startBtn.addEventListener('click', () => {
     if (isRunning) return;
-    
+
     isRunning = true;
     startBtn.disabled = true;
     stopBtn.disabled = false;
     categorySelect.disabled = true;
     itemSelect.disabled = true;
     document.body.classList.add('timer-running');
-    
+
     countdownInterval = setInterval(() => {
         if (totalSecondsRemaining <= 0) {
             clearInterval(countdownInterval);
             timerFinished();
             return;
         }
-        
+
         totalSecondsRemaining--;
         updateTimerDisplay();
     }, 1000);
@@ -122,12 +122,12 @@ resetBtn.addEventListener('click', resetTimer);
 function resetTimer() {
     clearInterval(countdownInterval);
     isRunning = false;
-    
+
     const minutes = parseFloat(itemSelect.value) || 0;
     totalSecondsRemaining = Math.floor(minutes * 60);
-    
+
     updateTimerDisplay();
-    
+
     startBtn.disabled = !itemSelect.value;
     stopBtn.disabled = true;
     resetBtn.disabled = !itemSelect.value;
@@ -141,13 +141,13 @@ function timerFinished() {
     startBtn.disabled = true;
     stopBtn.disabled = true;
     document.body.classList.remove('timer-running');
-    
+
     // Play sound
     alarmSound.play().catch(error => {
         console.error("Audio playback failed:", error);
         alert("Time is up!");
     });
-    
+
     // Visual indicator
     timerCard.style.boxShadow = "0 0 40px var(--danger)";
     setTimeout(() => {
