@@ -1,0 +1,22 @@
+server {
+    listen ${PORT};
+    server_name localhost;
+
+    # Nuclear Option: Absolutely prevent caching of everything
+    location / {
+        root /usr/share/nginx/html;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+        
+        # Kill cache for the main entry point
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
+        expires -1;
+    }
+
+    # Prevent caching of static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|mp3)$ {
+        root /usr/share/nginx/html;
+        expires -1;
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
+    }
+}
