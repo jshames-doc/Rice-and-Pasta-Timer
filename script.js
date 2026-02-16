@@ -43,7 +43,7 @@ const resetBtn = document.getElementById('reset-btn');
 const alarmSound = document.getElementById('alarm-sound');
 const timerCard = document.querySelector('.timer-card');
 
-const CURRENT_VERSION = '1.5';
+const CURRENT_VERSION = '1.6';
 
 // Nuclear Option: Check version and clear cache if needed
 if (localStorage.getItem('appVersion') !== CURRENT_VERSION) {
@@ -96,15 +96,20 @@ if ('serviceWorker' in navigator) {
 
 // Initialize Web Worker
 if (window.Worker) {
-    timerWorker = new Worker('timer-worker.js');
-    timerWorker.onmessage = function (e) {
-        if (e.data.status === 'TICK') {
-            totalSecondsRemaining = e.data.secondsRemaining;
-            updateTimerDisplay();
-        } else if (e.data.status === 'DONE') {
-            timerFinished();
-        }
-    };
+    try {
+        timerWorker = new Worker('timer-worker.js');
+        timerWorker.onmessage = function (e) {
+            if (e.data.status === 'TICK') {
+                totalSecondsRemaining = e.data.secondsRemaining;
+                updateTimerDisplay();
+            } else if (e.data.status === 'DONE') {
+                timerFinished();
+            }
+        };
+    } catch (e) {
+        console.warn('Web Worker initialization failed (likely due to file:// protocol restrictive security policies).', e);
+        timerWorker = null; // Fallback will trigger in startBtn logic
+    }
 } else {
     console.warn('Web Workers not supported in this browser. Timer may be throttled in background.');
     // Fallback logic could go here, but for now we warn
@@ -159,13 +164,24 @@ categorySelect.addEventListener('change', (e) => {
 
 function updateItemDropdown(category) {
     itemSelect.innerHTML = '<option value="" disabled selected>Select variety...</option>';
-    const items = cookingData[category];
 
-    for (const item in items) {
-        const option = document.createElement('option');
-        option.value = items[item];
-        option.textContent = item;
-        itemSelect.appendChild(option);
+    if (category === 'manual') {
+        // Generate 1-45 minutes
+        for (let i = 1; i <= 45; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = `${i} minute${i === 1 ? '' : 's'}`;
+            itemSelect.appendChild(option);
+        }
+    } else {
+        // Load from data
+        const items = cookingData[category];
+        for (const item in items) {
+            const option = document.createElement('option');
+            option.value = items[item];
+            option.textContent = item;
+            itemSelect.appendChild(option);
+        }
     }
 
     itemSelect.disabled = false;
