@@ -43,9 +43,76 @@ const resetBtn = document.getElementById('reset-btn');
 const alarmSound = document.getElementById('alarm-sound');
 const timerCard = document.querySelector('.timer-card');
 
-let countdownInterval;
+const CURRENT_VERSION = '1.2';
+
+// Nuclear Option: Check version and clear cache if needed
+if (localStorage.getItem('appVersion') !== CURRENT_VERSION) {
+    console.log(`New version detected: ${CURRENT_VERSION}. Clearing cache...`);
+
+    // Unregister Service Workers
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+            for (let registration of registrations) {
+                registration.unregister();
+            }
+        });
+    }
+
+    // Clear Cache Storage
+    if ('caches' in window) {
+        caches.keys().then(function (names) {
+            for (let name of names) {
+                caches.delete(name);
+            }
+        });
+    }
+
+    // Update version in localStorage
+    localStorage.setItem('appVersion', CURRENT_VERSION);
+
+    // Reload page (force get from server)
+    window.location.reload(true);
+}
+
 let totalSecondsRemaining = 0;
 let isRunning = false;
+let timerWorker = null;
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+            .then(registration => {
+                console.log('ServiceWorker registration successful');
+            })
+            .catch(err => {
+                console.log('ServiceWorker registration failed: ', err);
+            });
+    });
+}
+
+// Initialize Web Worker
+if (window.Worker) {
+    timerWorker = new Worker('timer-worker.js');
+    timerWorker.onmessage = function (e) {
+        if (e.data.status === 'TICK') {
+            totalSecondsRemaining = e.data.secondsRemaining;
+            updateTimerDisplay();
+        } else if (e.data.status === 'DONE') {
+            timerFinished();
+        }
+    };
+} else {
+    console.warn('Web Workers not supported in this browser. Timer may be throttled in background.');
+    // Fallback logic could go here, but for now we warn
+}
+
+// Request Notification Permission on first interaction
+function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+}
 
 // Initialize Dropdowns
 categorySelect.addEventListener('change', (e) => {
@@ -90,6 +157,8 @@ function updateTimerDisplay() {
 startBtn.addEventListener('click', () => {
     if (isRunning) return;
 
+    requestNotificationPermission();
+
     isRunning = true;
     startBtn.disabled = true;
     stopBtn.disabled = false;
@@ -97,20 +166,32 @@ startBtn.addEventListener('click', () => {
     itemSelect.disabled = true;
     document.body.classList.add('timer-running');
 
-    countdownInterval = setInterval(() => {
-        if (totalSecondsRemaining <= 0) {
-            clearInterval(countdownInterval);
-            timerFinished();
-            return;
-        }
-
-        totalSecondsRemaining--;
-        updateTimerDisplay();
-    }, 1000);
+    if (timerWorker) {
+        timerWorker.postMessage({
+            command: 'START',
+            seconds: totalSecondsRemaining
+        });
+    } else {
+        // Fallback for no worker support
+        window.countdownInterval = setInterval(() => {
+            if (totalSecondsRemaining <= 0) {
+                clearInterval(window.countdownInterval);
+                timerFinished();
+                return;
+            }
+            totalSecondsRemaining--;
+            updateTimerDisplay();
+        }, 1000);
+    }
 });
 
 stopBtn.addEventListener('click', () => {
-    clearInterval(countdownInterval);
+    if (timerWorker) {
+        timerWorker.postMessage({ command: 'STOP' });
+    } else {
+        clearInterval(window.countdownInterval);
+    }
+
     isRunning = false;
     startBtn.disabled = false;
     stopBtn.disabled = true;
@@ -120,7 +201,12 @@ stopBtn.addEventListener('click', () => {
 resetBtn.addEventListener('click', resetTimer);
 
 function resetTimer() {
-    clearInterval(countdownInterval);
+    if (timerWorker) {
+        timerWorker.postMessage({ command: 'RESET' });
+    } else {
+        clearInterval(window.countdownInterval);
+    }
+
     isRunning = false;
 
     const minutes = parseFloat(itemSelect.value) || 0;
@@ -136,17 +222,53 @@ function resetTimer() {
     document.body.classList.remove('timer-running');
 }
 
+function showNotification() {
+    if ('Notification' in window && Notification.permission === 'granted') {
+        // Try to register a service worker registration specific notification if possible (for Android)
+        // or just a standard Notification API call
+        if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+            navigator.serviceWorker.ready.then(function (registration) {
+                registration.showNotification('Rice & Pasta Timer', {
+                    body: 'Your food is ready!',
+                    icon: 'icon.svg',
+                    vibrate: [200, 100, 200]
+                });
+            });
+        } else {
+            new Notification('Rice & Pasta Timer', {
+                body: 'Your food is ready!',
+                icon: 'icon.svg'
+            });
+        }
+    }
+}
+
 function timerFinished() {
     isRunning = false;
     startBtn.disabled = true;
     stopBtn.disabled = true;
     document.body.classList.remove('timer-running');
 
-    // Play sound
+    // Play sound loop for 3 seconds using native loop property
+    alarmSound.loop = true;
     alarmSound.play().catch(error => {
         console.error("Audio playback failed:", error);
-        alert("Time is up!");
     });
+
+    // Stop after 3 seconds
+    setTimeout(() => {
+        alarmSound.pause();
+        alarmSound.currentTime = 0;
+        alarmSound.loop = false;
+    }, 3000);
+
+    // Vibration pattern (vibrate, pause, vibrate...)
+    if (navigator.vibrate) {
+        navigator.vibrate([500, 200, 500, 200, 500]);
+    }
+
+    // Show System Notification
+    showNotification();
 
     // Visual indicator
     timerCard.style.boxShadow = "0 0 40px var(--danger)";

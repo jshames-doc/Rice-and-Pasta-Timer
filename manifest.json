@@ -1,0 +1,16 @@
+{
+    "name": "Rice & Pasta Timer",
+    "short_name": "FoodTimer",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#0d0d12",
+    "theme_color": "#0d0d12",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "icon.svg",
+            "type": "image/svg+xml",
+            "sizes": "512x512"
+        }
+    ]
+}

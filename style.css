@@ -41,6 +41,18 @@ body {
     filter: blur(80px);
 }
 
+.version-tag {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    opacity: 0.5;
+    font-family: var(--font-mono);
+    pointer-events: none;
+    z-index: 100;
+}
+
 .blob {
     position: absolute;
     width: 400px;
@@ -123,6 +135,13 @@ header h1 {
     grid-template-columns: 1fr 1fr;
     gap: 20px;
     margin-bottom: 40px;
+}
+
+@media (max-width: 600px) {
+    .controls-row {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
 }
 
 .input-group {
