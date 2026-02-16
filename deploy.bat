@@ -10,7 +10,7 @@ echo ====================================================
 echo.
 
 :: Get latest version from README or internal file
-set VERSION=1.0
+set VERSION=1.81
 
 echo Project: %PROJECT_ID%
 echo Service: %SERVICE_NAME%
